@@ -11,11 +11,15 @@ master_df = master_df.drop(['Code', 'R', 'RA', 'Inn', 'Rank', 'GB', 'Save', 'Tim
                             'D/N', 'Win', 'Loss'], axis=1)
 
 
+teams = master_df['Team'].unique()
+'''
+deletes now-nonexistent teams (MTL) and duplicate codes (LAA/ANA, TBD/TBR)
+'''
+teams = delete(teams, [30, 31, 32, 33], axis=0)
+
 '''
 dataframe column values
 '''
-teams = master_df['Team'].unique()
-teams = delete(teams, [30, 31, 32, 33], axis=0)
 home_avg_attendance = []
 fans_per_year = []
 away_draw_power = []
@@ -24,26 +28,29 @@ wins = []
 fans_per_win = []
 wins_per_season = []
 base_attendances = []
-city_pop = [2792127, 4268289, 5379176, 2734044, 4588680, 9488493, 9488493, 2122940, 2070965, 4295700, 6063540, 2025297,
+city_pop = [2792127, 4268289, 5379176, 2734044, 4588680, 9488493, 9488493, 2122940, 2070965, 4295700, 6063540, 2025297,  #hardcoded from US Census Data (API)
             12874797, 12874797, 5673185, 2601465, 1560621, 3391191, 19716880, 19716880, 4402729, 5992766, 2358746,
             3138265, 3504628, 4402729, 2819241, 6575833, 5928000, 5759330]
 '''
 There are three teams that have had multiple three letter team IDs.
 If statements align team IDs
 '''
-for i in range(0,len(master_df['Team'])):
+for i in range(0, len(master_df['Team'])):
+
     if master_df['Team'][i] == 'FLA':
         master_df['Team'][i] = 'MIA'
     if master_df['Home Team'][i] == 'FLA':
         master_df['Home Team'][i] = 'MIA'
     if master_df['Away Team'][i] == 'FLA':
         master_df['Away Team'][i] = 'MIA'
+
     if master_df['Team'][i] == 'ANA':
         master_df['Team'][i] = 'LAA'
     if master_df['Home Team'][i] == 'ANA':
         master_df['Home Team'][i] = 'LAA'
     if master_df['Away Team'][i] == 'ANA':
         master_df['Away Team'][i] = 'LAA'
+
     if master_df['Team'][i] == 'TBD':
         master_df['Team'][i] = 'TBR'
     if master_df['Home Team'][i] == 'TBD':
@@ -148,7 +155,9 @@ for i in range(0, len(ranking_df['Team'])):
     final_rank.append(rank)
 
 ranking_df['Final Rank'] = final_rank
-ranking_df = ranking_df.drop(['Avg. Home Attendance', 'Away draw power', 'Base Attendance', 'City Pop', 'Attendance per capita', 'Rank 1', 'Rank 2', 'Rank 3', 'Rank 4'], axis=1)
+ranking_df = ranking_df.drop(['Avg. Home Attendance', 'Away draw power', 'Base Attendance', 'City Pop',
+                              'Attendance per capita', 'Rank 1', 'Rank 2', 'Rank 3', 'Rank 4'], axis=1)
+
 ranking_df = ranking_df.sort_values(by='Final Rank', ascending=False)
 ranking_df = ranking_df.reset_index()
 ranking_df.to_csv('final_ranking.csv')
