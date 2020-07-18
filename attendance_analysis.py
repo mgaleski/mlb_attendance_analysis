@@ -35,32 +35,23 @@ city_pop = [2792127, 4268289, 5379176, 2734044, 4588680, 9488493, 9488493, 21229
 There are three teams that have had multiple three letter team IDs.
 If statements align team IDs
 '''
-for i in range(0, len(master_df['Team'])):
+master_df.loc[master_df['Team'] == 'FLA'] = 'MIA'
+master_df.loc[master_df['Home Team'] == 'FLA'] = 'MIA'
+master_df.loc[master_df['Away Team'] == 'FLA'] = 'MIA'
 
-    if master_df['Team'][i] == 'FLA':
-        master_df['Team'][i] = 'MIA'
-    if master_df['Home Team'][i] == 'FLA':
-        master_df['Home Team'][i] = 'MIA'
-    if master_df['Away Team'][i] == 'FLA':
-        master_df['Away Team'][i] = 'MIA'
+master_df.loc[master_df['Team'] == 'ANA'] = 'LAA'
+master_df.loc[master_df['Home Team'] == 'ANA'] = 'LAA'
+master_df.loc[master_df['Away Team'] == 'ANA'] = 'LAA'
 
-    if master_df['Team'][i] == 'ANA':
-        master_df['Team'][i] = 'LAA'
-    if master_df['Home Team'][i] == 'ANA':
-        master_df['Home Team'][i] = 'LAA'
-    if master_df['Away Team'][i] == 'ANA':
-        master_df['Away Team'][i] = 'LAA'
+master_df.loc[master_df['Team'] == 'TBD'] = 'TBR'
+master_df.loc[master_df['Home Team'] == 'TBD'] = 'TBR'
+master_df.loc[master_df['Away Team'] == 'TBD'] = 'TBR'
 
-    if master_df['Team'][i] == 'TBD':
-        master_df['Team'][i] = 'TBR'
-    if master_df['Home Team'][i] == 'TBD':
-        master_df['Home Team'][i] = 'TBR'
-    if master_df['Away Team'][i] == 'TBD':
-        master_df['Away Team'][i] = 'TBR'
 
-'''
-loop calculates total win and win pct columns for final df
-'''
+master_df['Attendance'] = pd.to_numeric(master_df['Attendance'], errors='coerce')
+master_df = master_df.dropna(subset=['Attendance'])
+master_df['Attendance'] = master_df['Attendance'].astype(int)
+
 for team in teams:
     overall_df = master_df[master_df['Team'] == team]
     win_count = len(overall_df[overall_df['Wins'] == 1])
@@ -73,6 +64,7 @@ loop calculating total home attendance and average home attendance/game for each
 '''
 for team in teams:
     home_df = master_df[master_df['Home Team'] == team]
+
     total_attendance = home_df['Attendance'].sum()
     avg_attendance = home_df['Attendance'].mean()
     home_avg_attendance.append(round(avg_attendance,2))
@@ -107,11 +99,11 @@ final_df = {'Team': teams,
             'City Pop': city_pop}
 
 
-for i in range(0,len(final_df['Team'])):
+for i in range(0, len(final_df['Team'])):
     wins_per_season.append(round(final_df['Total Wins'][i]/7, 2))
 
 attendance_per_cap = []
-for i in range(0,len(final_df['Team'])):
+for i in range(0, len(final_df['Team'])):
     attendance_cap = final_df['Fans/yr'][i]/final_df['City Pop'][i]
     attendance_per_cap.append(attendance_cap)
 
@@ -131,7 +123,8 @@ for i in range(0,len(final_df['Team'])):
     base_attendance = final_df['Avg. Home Attendance'][i] - base_attendance
     base_attendances.append(round(base_attendance, 2))
 
-
+final_df = pd.DataFrame(final_df)
+print(final_df.head())
 
 final_df = pd.DataFrame(final_df)
 final_df[['Avg. Home Attendance',
