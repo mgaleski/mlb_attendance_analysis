@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 
-master_df = pd.read_csv('MLB_Ind_Game_Data.csv', encoding='ISO-8859–1')
+master_df = pd.read_csv('data/MLB_Ind_Game_Data.csv', encoding='ISO-8859–1')
 master_df = master_df.drop(['Code', 'R', 'RA', 'Inn', 'Rank', 'GB', 'Save', 'Time', 'Streak', 'Orig. Scheduled',
                             'Games Back', 'Date.1', 'Date', 'Day Code', 'Wins.1', 'Day_Date', 'Streak.1', 'Losses.1',
                             'D/N', 'Win', 'Loss'], axis=1)
@@ -128,12 +128,14 @@ print(final_df.head())
 
 final_df = pd.DataFrame(final_df)
 final_df[['Avg. Home Attendance',
-          'Fans/yr', 'Away draw power']] = final_df[['Avg. Home Attendance',
-                                                     'Fans/yr', 'Away draw power']].astype(int)
+          'Fans/yr',
+          'Away draw power']] = final_df[['Avg. Home Attendance',
+                                          'Fans/yr',
+                                          'Away draw power']].astype(int)
 
 final_df = final_df.sort_values(by=['Avg. Home Attendance'], ascending=False)
 final_df = final_df.reset_index()
-final_df.to_csv('presentation_data.csv')
+final_df.to_csv('data/presentation_data.csv')
 
 
 final_rank = []
@@ -153,14 +155,14 @@ ranking_df = ranking_df.drop(['Avg. Home Attendance', 'Away draw power', 'Base A
 
 ranking_df = ranking_df.sort_values(by='Final Rank', ascending=False)
 ranking_df = ranking_df.reset_index()
-ranking_df.to_csv('final_ranking.csv')
+ranking_df.to_csv('data/final_ranking.csv')
 
 plt.figure(figsize=(20, 10))
 plt.bar(final_df['Team'], final_df['Avg. Home Attendance'])
 plt.title('Average Attendance per Home Game')
 plt.xlabel('Team')
 plt.ylabel('Avg. Home Attendance')
-plt.savefig('figure1.png')
+plt.savefig('data/figure1.png')
 
 
 plt.figure(figsize=(20, 10))
@@ -172,7 +174,7 @@ plt.xlim(65, 96)
 plt.ylim(0, 50000)
 plt.xlabel('Avg. Wins/Season')
 plt.ylabel('Avg. Home Attendance')
-plt.savefig('figure2.png')
+plt.savefig('graphs/figure2.png')
 
 
 away_draw_df = final_df.sort_values(by='Away draw power', ascending=False)
@@ -181,7 +183,7 @@ plt.title('Away Draw Power')
 plt.ylabel('Fans draw vs. average')
 plt.xlabel('Team')
 plt.bar(away_draw_df['Team'], away_draw_df['Away draw power'])
-plt.savefig('figure3.png')
+plt.savefig('graphs/figure3.png')
 
 
 attendance_per_cap_df = final_df.sort_values(by='Attendance per capita', ascending=False)
@@ -190,11 +192,11 @@ plt.bar(attendance_per_cap_df['Team'], attendance_per_cap_df['Attendance per cap
 plt.ylabel('Attendance per citizen in metro area (2013 Census)')
 plt.xlabel('Team')
 plt.title('Attendance per capita')
-plt.savefig('figure4.png')
+plt.savefig('graphs/figure4.png')
 
 plt.figure(figsize=(20, 10))
 plt.bar(ranking_df['Team'], ranking_df['Final Rank'])
 plt.ylabel('Average Ranking')
 plt.xlabel('Team')
 plt.title('Final Ranking')
-plt.savefig('figure5.png')
+plt.savefig('graphs/figure5.png')
