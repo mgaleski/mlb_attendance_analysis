@@ -4,6 +4,10 @@ from numpy import *
 import matplotlib.pyplot as plt
 from scipy import stats
 
+team_colors = pd.read_csv('data/team-colors.csv')
+
+team_colors = team_colors.drop(['team_name', 'secondary_color', 'league', 'division'], axis=1)
+
 
 master_df = pd.read_csv('data/MLB_Ind_Game_Data.csv', encoding='ISO-8859–1')
 master_df = master_df.drop(['Code', 'R', 'RA', 'Inn', 'Rank', 'GB', 'Save', 'Time', 'Streak', 'Orig. Scheduled',
@@ -11,11 +15,16 @@ master_df = master_df.drop(['Code', 'R', 'RA', 'Inn', 'Rank', 'GB', 'Save', 'Tim
                             'D/N', 'Win', 'Loss'], axis=1)
 
 
-teams = master_df['Team'].unique()
+
+team_map = master_df['Team'].unique()
 '''
 deletes now-nonexistent teams (MTL) and duplicate codes (LAA/ANA, TBD/TBR)
 '''
-teams = delete(teams, [30, 31, 32, 33], axis=0)
+team_map = delete(team_map, [30, 31, 32, 33], axis=0)
+team_map = pd.DataFrame(team_map)
+team_map = team_map.join(team_colors.set_index(['tm']), on=[0])
+team_map = team_map.rename(columns={0: 'Team'})
+print(team_map)
 
 '''
 dataframe column values
@@ -27,10 +36,10 @@ win_pct = []
 wins = []
 fans_per_win = []
 wins_per_season = []
-base_attendances = []
 city_pop = [2792127, 4268289, 5379176, 2734044, 4588680, 9488493, 9488493, 2122940, 2070965, 4295700, 6063540, 2025297,  #hardcoded from US Census Data (API)
             12874797, 12874797, 5673185, 2601465, 1560621, 3391191, 19716880, 19716880, 4402729, 5992766, 2358746,
             3138265, 3504628, 4402729, 2819241, 6575833, 5928000, 5759330]
+
 '''
 There are three teams that have had multiple three letter team IDs.
 If statements align team IDs
@@ -52,7 +61,7 @@ master_df['Attendance'] = pd.to_numeric(master_df['Attendance'], errors='coerce'
 master_df = master_df.dropna(subset=['Attendance'])
 master_df['Attendance'] = master_df['Attendance'].astype(int)
 
-for team in teams:
+for team in team_map['Team']:
     overall_df = master_df[master_df['Team'] == team]
     win_count = len(overall_df[overall_df['Wins'] == 1])
     game_count = len(overall_df)
@@ -62,7 +71,7 @@ for team in teams:
 '''
 loop calculating total home attendance and average home attendance/game for each team
 '''
-for team in teams:
+for team in team_map['Team']:
     home_df = master_df[master_df['Home Team'] == team]
 
     total_attendance = home_df['Attendance'].sum()
@@ -73,7 +82,7 @@ for team in teams:
 '''
 loop calculating average difference in attendance vs. the norm for each team when they play away
 '''
-for team in teams:
+for team in team_map['Team']:
     opp_df = master_df[master_df['Away Team'] == team]
     avg_draw_diff = opp_df['Attendance vs Avg'].mean()
     away_draw_power.append(round(avg_draw_diff,2))
@@ -90,14 +99,14 @@ for value in home_avg_attendance:
 '''
 creating final dataframe
 '''
-final_df = {'Team': teams,
+final_df = {'Team': team_map['Team'],
             'Avg. Home Attendance': home_avg_attendance,
             'Fans/yr': fans_per_year,
             'Away draw power': away_draw_power,
             'Win %': win_pct,
             'Total Wins': wins,
             'City Pop': city_pop}
-
+final_df = pd.DataFrame(final_df)
 
 for i in range(0, len(final_df['Team'])):
     wins_per_season.append(round(final_df['Total Wins'][i]/7, 2))
@@ -109,22 +118,20 @@ for i in range(0, len(final_df['Team'])):
 
 final_df['Attendance per capita'] = attendance_per_cap
 final_df['Avg. Wins/Season'] = wins_per_season
-final_df['Base Attendance'] = base_attendances
-
 
 x = np.linspace(0, 100)
 slope, intercept, r_value, p_value, std_err0r = stats.linregress(final_df['Avg. Wins/Season'],
                                                                  final_df['Avg. Home Attendance'])
 y = slope*x + intercept
 
+base_attendances = []
+for i in range(0, len(final_df['Team'])):
+    team_base_attendance = (final_df['Avg. Wins/Season'][i] * slope + intercept)
+    team_base_attendance = final_df['Avg. Home Attendance'][i] - team_base_attendance
+    base_attendances.append(round(team_base_attendance, 2))
 
-for i in range(0,len(final_df['Team'])):
-    base_attendance = (final_df['Avg. Wins/Season'][i] * slope + intercept)
-    base_attendance = final_df['Avg. Home Attendance'][i] - base_attendance
-    base_attendances.append(round(base_attendance, 2))
-
-final_df = pd.DataFrame(final_df)
-print(final_df.head())
+final_df['Base Attendance'] = base_attendances
+print(final_df)
 
 final_df = pd.DataFrame(final_df)
 final_df[['Avg. Home Attendance',
@@ -162,7 +169,7 @@ plt.bar(final_df['Team'], final_df['Avg. Home Attendance'])
 plt.title('Average Attendance per Home Game')
 plt.xlabel('Team')
 plt.ylabel('Avg. Home Attendance')
-plt.savefig('data/figure1.png')
+plt.savefig('data/avg_attendance.png')
 
 
 plt.figure(figsize=(20, 10))
@@ -174,7 +181,7 @@ plt.xlim(65, 96)
 plt.ylim(0, 50000)
 plt.xlabel('Avg. Wins/Season')
 plt.ylabel('Avg. Home Attendance')
-plt.savefig('graphs/figure2.png')
+plt.savefig('graphs/win_regression.png')
 
 
 away_draw_df = final_df.sort_values(by='Away draw power', ascending=False)
@@ -183,7 +190,7 @@ plt.title('Away Draw Power')
 plt.ylabel('Fans draw vs. average')
 plt.xlabel('Team')
 plt.bar(away_draw_df['Team'], away_draw_df['Away draw power'])
-plt.savefig('graphs/figure3.png')
+plt.savefig('graphs/away_draw.png')
 
 
 attendance_per_cap_df = final_df.sort_values(by='Attendance per capita', ascending=False)
@@ -192,7 +199,7 @@ plt.bar(attendance_per_cap_df['Team'], attendance_per_cap_df['Attendance per cap
 plt.ylabel('Attendance per citizen in metro area (2013 Census)')
 plt.xlabel('Team')
 plt.title('Attendance per capita')
-plt.savefig('graphs/figure4.png')
+plt.savefig('graphs/attendance_per_cap.png')
 
 plt.figure(figsize=(20, 10))
 plt.bar(ranking_df['Team'], ranking_df['Final Rank'])
